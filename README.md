@@ -1,4 +1,4 @@
-# RAG Classic - KT Onboarding Assistant
+# RAG Classic - Chatbot
 
 A modular Classic RAG implementation for document Q&A using AWS Bedrock.
 
