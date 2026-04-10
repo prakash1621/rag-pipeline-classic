@@ -1,11 +1,39 @@
 import boto3
 from langchain_aws import ChatBedrock
 from langchain_core.prompts import PromptTemplate
-from app.config import AWS_REGION, LLM_MODEL
+from app.config import LLM_PROVIDER, LLM_CONFIG, AWS_DEFAULT_REGION
+
+SUPPORTED_LLM_PROVIDERS = ["openai", "bedrock", "ollama"]
 
 def get_llm():
-    bedrock = boto3.client("bedrock-runtime", region_name=AWS_REGION)
-    return ChatBedrock(client=bedrock, model_id=LLM_MODEL, temperature=0)
+    provider = LLM_PROVIDER
+
+    if provider == "openai":
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(
+            model=LLM_CONFIG["model_name"],
+            temperature=LLM_CONFIG.get("temperature", 0),
+        )
+    elif provider == "bedrock":
+        region = LLM_CONFIG.get("region", AWS_DEFAULT_REGION)
+        bedrock = boto3.client("bedrock-runtime", region_name=region)
+        return ChatBedrock(
+            client=bedrock,
+            model_id=LLM_CONFIG["model_id"],
+            model_kwargs={"temperature": LLM_CONFIG.get("temperature", 0)},
+        )
+    elif provider == "ollama":
+        from langchain_ollama import ChatOllama
+        return ChatOllama(
+            model=LLM_CONFIG["model_name"],
+            base_url=LLM_CONFIG["base_url"],
+            temperature=LLM_CONFIG.get("temperature", 0),
+        )
+    else:
+        raise ValueError(
+            f"Unsupported LLM provider: '{provider}'. "
+            f"Supported providers: {SUPPORTED_LLM_PROVIDERS}"
+        )
 
 def get_prompt_template():
     return PromptTemplate(

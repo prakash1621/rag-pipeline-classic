@@ -5,7 +5,7 @@ from docx import Document
 from bs4 import BeautifulSoup
 import re
 from langchain_text_splitters import CharacterTextSplitter
-from app.config import KB_PATH, CHUNK_SIZE, CHUNK_OVERLAP
+from app.config import KB_PATH, CHUNKING_CONFIG
 
 def extract_text_from_file(file_path):
     text = ""
@@ -84,7 +84,11 @@ def chunk_documents(categories):
             all_links.extend(links)
             
             if text.strip():
-                splitter = CharacterTextSplitter(separator="\n", chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+                splitter = CharacterTextSplitter(
+                    separator="\n",
+                    chunk_size=CHUNKING_CONFIG["parent_child"]["child_size"],
+                    chunk_overlap=CHUNKING_CONFIG["parent_child"]["child_overlap"],
+                )
                 chunks = splitter.split_text(text)
                 
                 char_count = 0

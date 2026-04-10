@@ -10,7 +10,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import streamlit as st
 import shutil
-from app.config import VECTOR_STORE_PATH
+from app.config import (
+    VECTOR_STORE_PATH,
+    EMBEDDING_PROVIDER,
+    LLM_PROVIDER,
+    VECTOR_STORE_PROVIDER,
+    VECTOR_STORE_CONFIG,
+    CATEGORY_KEYWORDS,
+    PINECONE_API_KEY,
+)
 from app.ingestion import scan_knowledge_base, chunk_documents
 from app.embedding import create_vector_store, save_vector_store, load_vector_store, save_file_metadata
 from app.retrieval import retrieve_documents
@@ -67,12 +75,27 @@ if st.session_state.vectorstore is None:
         st.info("✅ Loaded existing knowledge base")
 
 # Sidebar
+st.sidebar.markdown("### 📊 Active Providers")
+st.sidebar.markdown(f"**Embedding:** {EMBEDDING_PROVIDER}")
+st.sidebar.markdown(f"**LLM:** {LLM_PROVIDER}")
+st.sidebar.markdown(f"**Vector Store:** {VECTOR_STORE_PROVIDER}")
+st.sidebar.markdown("---")
+
 if st.sidebar.button("🔄 Rebuild Knowledge Base"):
     build_knowledge_base()
 
 if st.sidebar.button("🗑️ Clear Knowledge Base"):
-    if os.path.exists(VECTOR_STORE_PATH):
-        shutil.rmtree(VECTOR_STORE_PATH)
+    if VECTOR_STORE_PROVIDER == "pinecone":
+        try:
+            from pinecone import Pinecone
+            pc = Pinecone(api_key=PINECONE_API_KEY)
+            index = pc.Index(VECTOR_STORE_CONFIG["index_name"])
+            index.delete(delete_all=True, namespace=VECTOR_STORE_CONFIG.get("namespace"))
+        except Exception as e:
+            st.sidebar.error(f"Failed to clear Pinecone index: {e}")
+    else:
+        if os.path.exists(VECTOR_STORE_PATH):
+            shutil.rmtree(VECTOR_STORE_PATH)
     st.session_state.vectorstore = None
     st.session_state.messages = []
     st.session_state.response_cache = {}
@@ -99,16 +122,6 @@ def process_question(question):
         
         st.session_state.response_cache[question_key] = answer
         st.session_state.messages.append({"role": "assistant", "content": answer})
-
-# Available categories
-if st.session_state.vectorstore is not None:
-    st.markdown("### 📂 Available Knowledge Categories")
-    st.markdown("""
-    ✅ **HR Policies**  
-    ✅ **Engineering Docs**  
-    ✅ **Internal Guides**  
-    ✅ **Product Manuals**  
-    """)
 
 # Chat history
 for msg in st.session_state.messages:
