@@ -113,10 +113,23 @@ EDGAR_CONFIG: dict = _cfg.get("edgar", {})
 # ── Agentic RAG ────────────────────────────────────────────
 AGENTIC_CONFIG: dict = _cfg.get("agentic", {})
 
-# ── API keys (from .env) ───────────────────────────────────
-PINECONE_API_KEY: str | None = os.environ.get("PINECONE_API_KEY")
-OPENAI_API_KEY: str | None = os.environ.get("OPENAI_API_KEY")
-TAVILY_API_KEY: str | None = os.environ.get("TAVILY_API_KEY")
+# ── API keys (from .env or Streamlit secrets) ──────────────
+def _get_secret(key: str, default: str | None = None) -> str | None:
+    """Read from env first, then Streamlit secrets as fallback."""
+    val = os.environ.get(key)
+    if val:
+        return val
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and key in st.secrets:
+            return str(st.secrets[key])
+    except Exception:
+        pass
+    return default
+
+PINECONE_API_KEY: str | None = _get_secret("PINECONE_API_KEY")
+OPENAI_API_KEY: str | None = _get_secret("OPENAI_API_KEY")
+TAVILY_API_KEY: str | None = _get_secret("TAVILY_API_KEY")
 
 # ── AWS config (from .env) ─────────────────────────────────
 AWS_DEFAULT_REGION: str = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
