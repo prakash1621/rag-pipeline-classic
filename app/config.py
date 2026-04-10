@@ -51,8 +51,8 @@ def load_config(yaml_path: str | None = None) -> dict:
         for key in ["PINECONE_API_KEY", "OPENAI_API_KEY", "TAVILY_API_KEY",
                      "AWS_DEFAULT_REGION", "AWS_EMBEDDING_MODEL", "AWS_LLM_MODEL",
                      "SEC_USER_AGENT"]:
-            if key in st.secrets and key not in os.environ:
-                os.environ[key] = st.secrets[key]
+            if hasattr(st, "secrets") and key in st.secrets:
+                os.environ[key] = str(st.secrets[key])
     except Exception:
         pass
 
