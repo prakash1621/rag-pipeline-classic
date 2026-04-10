@@ -10,10 +10,16 @@ faiss-cpu
 numpy
 pyyaml
 python-dotenv
-pinecone-client
+pinecone
 langchain-pinecone
 langchain-openai
 langchain-ollama
 langchain-huggingface
 sentence-transformers
 langchain-text-splitters
+fastapi
+uvicorn
+PyJWT
+bcrypt
+python-multipart
+httpx

@@ -1,0 +1,4 @@
+users:
+  admin:
+    password_hash: $2b$12$39nc2aE36VvEW1d.7Apns.8fhNVpC1v1gXqEoRn2UO7eyR8N2aSFe
+    role: admin
