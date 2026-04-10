@@ -1,0 +1,121 @@
+# ============================================================
+# M&A Oracle — RAG Pipeline Configuration
+# ============================================================
+# This file controls ALL swappable components.
+# Team members: just change the "provider" fields below
+# to switch between free/local and paid/cloud options.
+# No Python code changes needed.
+# ============================================================
+
+# ─── Embedding Model ────────────────────────────────────────
+embedding:
+  provider: "pinecone"
+  huggingface:
+    model_name: "all-MiniLM-L6-v2"
+    device: "cpu"
+  bedrock:
+    model_id: "amazon.titan-embed-text-v1"
+    region: "us-east-1"
+  openai:
+    model_name: "text-embedding-3-small"
+  pinecone:
+    model_name: "multilingual-e5-large"
+
+# ─── LLM (Language Model) ──────────────────────────────────
+llm:
+  provider: "openai"
+  bedrock:
+    model_id: "anthropic.claude-3-haiku-20240307-v1:0"
+    region: "us-east-1"
+    temperature: 0
+  openai:
+    model_name: "gpt-4o-mini"
+    temperature: 0
+  ollama:
+    model_name: "llama3.1"
+    base_url: "http://localhost:11434"
+    temperature: 0
+
+# ─── Vector Store ───────────────────────────────────────────
+vector_store:
+  provider: "pinecone"
+  faiss:
+    path: "vector_store"
+  pinecone:
+    index_name: "rag-classic"
+    namespace: "default"
+    cloud: "aws"
+    region: "us-east-1"
+
+# ─── Chunking Strategies ───────────────────────────────────
+chunking:
+  parent_child:
+    parent_size: 3000
+    parent_overlap: 500
+    child_size: 500
+    child_overlap: 100
+  semantic:
+    buffer_size: 1
+    breakpoint_threshold_type: "percentile"
+    breakpoint_threshold_amount: 95
+
+# ─── Retrieval Settings ────────────────────────────────────
+retrieval:
+  k: 10
+  rerank_top_k: 3
+
+# ─── Three-Tier Caching ───────────────────────────────────
+caching:
+  exact:
+    enabled: true
+    normalize_query: true
+    ttl_seconds: 3600
+  semantic:
+    enabled: true
+    similarity_threshold: 0.95
+    ttl_seconds: 3600
+    max_cache_size: 1000
+  retrieval:
+    enabled: true
+    similarity_threshold: 0.90
+    ttl_seconds: 1800
+    max_cache_size: 500
+  backend: "sqlite"
+  cache_dir: "cache"
+
+# ─── SEC EDGAR Ingestion ──────────────────────────────────
+edgar:
+  default_tickers: ["AAPL", "MSFT", "NVDA", "AMZN", "META", "GOOGL", "TSLA", "CRM", "SNOW", "CRWD", "PANW", "FTNT"]
+  filing_types: ["10-K", "10-Q", "8-K"]
+  filings_per_type: 5
+  start_date: "2020-01-01"
+  output_dir: "data/edgar"
+  chunking:
+    parent_size: 4000
+    parent_overlap: 600
+    child_size: 800
+    child_overlap: 150
+
+# ─── Paths ─────────────────────────────────────────────────
+paths:
+  knowledge_base: "knowledge-base"
+  vector_store: "vector_store"
+  cache_dir: "cache"
+  edgar_data: "data/edgar"
+  xbrl_db: "data/xbrl/financials.db"
+
+# ─── Category Keywords ─────────────────────────────────────
+categories:
+  sec_filing: ["10-k", "10-q", "8-k", "sec", "edgar", "filing", "annual report", "risk factor", "md&a"]
+  xbrl_financials: ["xbrl", "revenue trend", "eps", "total assets", "financial ratio", "year over year"]
+  earnings_transcript: ["earnings call", "transcript", "ceo said", "management said", "analyst question", "guidance", "forward guidance"]
+  patent: ["patent", "ip portfolio", "intellectual property", "patent claim", "cpc code", "patent citation"]
+  proxy_statement: ["proxy", "def 14a", "board member", "director", "executive compensation", "related party"]
+
+# ─── Agentic RAG Settings ─────────────────────────────────
+agentic:
+  max_retries: 2
+  grading:
+    doc_relevance_threshold: 0.5
+  routing:
+    default: "vectorstore"

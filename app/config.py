@@ -22,7 +22,13 @@ def load_config(yaml_path: str | None = None) -> dict:
     is missing or unreadable.
     """
     if yaml_path is None:
-        yaml_path = os.path.join(WORKSPACE_ROOT, "config.yaml")
+        # Look in repo root first (for Streamlit Cloud), then workspace root (local dev)
+        repo_path = os.path.join(BASE_DIR, "config.yaml")
+        workspace_path = os.path.join(WORKSPACE_ROOT, "config.yaml")
+        if os.path.isfile(repo_path):
+            yaml_path = repo_path
+        else:
+            yaml_path = workspace_path
 
     if not os.path.isfile(yaml_path):
         raise FileNotFoundError(
@@ -33,9 +39,22 @@ def load_config(yaml_path: str | None = None) -> dict:
     with open(yaml_path, "r", encoding="utf-8") as fh:
         cfg = yaml.safe_load(fh)
 
-    # Load .env (workspace root) — existing env vars are NOT overwritten
-    env_path = os.path.join(WORKSPACE_ROOT, ".env")
+    # Load .env — check repo root first, then workspace root
+    repo_env = os.path.join(BASE_DIR, ".env")
+    workspace_env = os.path.join(WORKSPACE_ROOT, ".env")
+    env_path = repo_env if os.path.isfile(repo_env) else workspace_env
     load_dotenv(env_path)
+
+    # Support Streamlit Cloud secrets (st.secrets → env vars)
+    try:
+        import streamlit as st
+        for key in ["PINECONE_API_KEY", "OPENAI_API_KEY", "TAVILY_API_KEY",
+                     "AWS_DEFAULT_REGION", "AWS_EMBEDDING_MODEL", "AWS_LLM_MODEL",
+                     "SEC_USER_AGENT"]:
+            if key in st.secrets and key not in os.environ:
+                os.environ[key] = st.secrets[key]
+    except Exception:
+        pass
 
     # .env overrides for paths
     env_vs = os.environ.get("VECTOR_STORE_PATH")
